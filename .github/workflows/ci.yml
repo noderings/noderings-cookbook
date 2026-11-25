@@ -17,7 +17,7 @@ jobs:
   lint-unit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install Cinc Workstation
         run: curl -fsSL https://omnitruck.cinc.sh/install.sh | sudo bash -s -- -P cinc-workstation -v 26
       - name: Cookstyle
@@ -28,8 +28,8 @@ jobs:
   markdown-yaml:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: DavidAnson/markdownlint-cli2-action@v20
+      - uses: actions/checkout@v7
+      - uses: DavidAnson/markdownlint-cli2-action@v25
         with:
           globs: "**/*.md"
       - name: yamllint
@@ -46,7 +46,7 @@ jobs:
       NODERINGS_TEST_ID: gh-${{ github.run_id }}-${{ github.run_attempt }}
       KITCHEN_LOCAL_YAML: kitchen.exec.yml
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install Cinc Workstation
         if: env.NODERINGS_TOKEN != ''
         run: curl -fsSL https://omnitruck.cinc.sh/install.sh | sudo bash -s -- -P cinc-workstation -v 26
