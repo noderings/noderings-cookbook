@@ -87,8 +87,8 @@ module NodeRingsCookbook
       v.downcase.split.join(' ')
     end
 
-    def same_values?(type, a, b)
-      Array(a).map { |x| canonical(type, x) }.sort == Array(b).map { |x| canonical(type, x) }.sort
+    def same_values?(type, left, right)
+      Array(left).map { |x| canonical(type, x) }.sort == Array(right).map { |x| canonical(type, x) }.sort
     end
 
     # Splits a TXT value into 255-byte quoted strings, as the API expects.
