@@ -145,12 +145,12 @@ module NodeRingsCookbook
     end
 
     # Compares two API rule bodies, ignoring list order.
-    def same_rule?(a, b)
-      a['action'] == b['action'] && a['protocol'] == b['protocol'] && a['direction'] == b['direction'] &&
-        a['sourcePorts'].to_s == b['sourcePorts'].to_s &&
-        a['destinationPorts'].to_s == b['destinationPorts'].to_s &&
-        endpoint_key(a['source']) == endpoint_key(b['source']) &&
-        endpoint_key(a['destination']) == endpoint_key(b['destination'])
+    def same_rule?(left, right)
+      left['action'] == right['action'] && left['protocol'] == right['protocol'] && left['direction'] == right['direction'] &&
+        left['sourcePorts'].to_s == right['sourcePorts'].to_s &&
+        left['destinationPorts'].to_s == right['destinationPorts'].to_s &&
+        endpoint_key(left['source']) == endpoint_key(right['source']) &&
+        endpoint_key(left['destination']) == endpoint_key(right['destination'])
     end
 
     def endpoint_view(endpoint)
@@ -205,6 +205,8 @@ module NodeRingsCookbook
         ids[i] = c['id']
         claimed << c['id']
       end
+      # A second pass, not merged with the first: every rule keeps its own
+      # position before any rule claims a match from elsewhere.
       desired.each_with_index do |d, i|
         next if ids[i]
 

@@ -112,7 +112,7 @@ module NodeRingsCookbook
       msg += " with billing type #{billing_type}" unless billing_type.to_s.empty?
       msg += '.'
       msg += " #{located} offer(s) matched the location but not the required capabilities or IPv6." if located.positive?
-      msg + ' List what is sold in the NodeRings console marketplace, or with the API at /v1/marketplace/plans.'
+      "#{msg} List what is sold in the NodeRings console marketplace, or with the API at /v1/marketplace/plans."
     end
   end
 
@@ -120,8 +120,8 @@ module NodeRingsCookbook
   module Compute
     module_function
 
-    def power_state(vm)
-      op = (vm || {})['operationStatus'].to_s
+    def power_state(machine)
+      op = (machine || {})['operationStatus'].to_s
       return 'running' if %w(OPERATION_STATUS_STARTED OPERATION_STATUS_RESTARTED).include?(op)
       return 'stopped' if op == 'OPERATION_STATUS_STOPPED'
 
@@ -138,28 +138,28 @@ module NodeRingsCookbook
       "DISTRO_#{normalize_distro(distro).upcase}"
     end
 
-    def user_tags(vm)
-      Array((vm || {})['tags']).reject { |t| t.start_with?(NONCE_TAG_PREFIX) }.sort
+    def user_tags(machine)
+      Array((machine || {})['tags']).reject { |t| t.start_with?(NONCE_TAG_PREFIX) }.sort
     end
 
     # The VM as a plain hash with friendly fields.
-    def view(vm)
-      return {} if vm.nil?
+    def view(machine)
+      return {} if machine.nil?
 
       {
-        'id' => vm['id'],
-        'hostname' => vm['hostname'],
-        'ipv4' => vm['ipv4'],
-        'ipv6' => vm['ipv6'],
-        'power_state' => power_state(vm),
-        'distro' => NodeRingsCookbook.trim_enum(vm['distro'], 'DISTRO_'),
-        'plan_code' => vm['planCode'],
-        'plan_id' => vm['planId'],
-        'region_id' => vm['regionId'],
-        'billing_type' => NodeRingsCookbook.trim_enum(vm['planBillingType'], 'BILLING_TYPE_'),
-        'provisioning_status' => NodeRingsCookbook.trim_enum(vm['crStatus'], 'CR_STATUS_'),
-        'firewall_ruleset_id' => vm['firewallRulesetId'],
-        'tags' => user_tags(vm),
+        'id' => machine['id'],
+        'hostname' => machine['hostname'],
+        'ipv4' => machine['ipv4'],
+        'ipv6' => machine['ipv6'],
+        'power_state' => power_state(machine),
+        'distro' => NodeRingsCookbook.trim_enum(machine['distro'], 'DISTRO_'),
+        'plan_code' => machine['planCode'],
+        'plan_id' => machine['planId'],
+        'region_id' => machine['regionId'],
+        'billing_type' => NodeRingsCookbook.trim_enum(machine['planBillingType'], 'BILLING_TYPE_'),
+        'provisioning_status' => NodeRingsCookbook.trim_enum(machine['crStatus'], 'CR_STATUS_'),
+        'firewall_ruleset_id' => machine['firewallRulesetId'],
+        'tags' => user_tags(machine),
       }
     end
 
