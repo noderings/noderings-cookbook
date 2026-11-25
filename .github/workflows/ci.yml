@@ -1,0 +1,58 @@
+---
+name: ci
+
+"on":
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  lint-unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Cinc Workstation
+        run: curl -fsSL https://omnitruck.cinc.sh/install.sh | sudo bash -s -- -P cinc-workstation -v 26
+      - name: Cookstyle
+        run: cookstyle --display-cop-names --extra-details
+      - name: ChefSpec
+        run: cinc exec rspec
+
+  markdown-yaml:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DavidAnson/markdownlint-cli2-action@v20
+        with:
+          globs: "**/*.md"
+      - name: yamllint
+        run: yamllint .
+
+  # Calls the real NodeRings API. Runs when the NODERINGS_TOKEN secret is set,
+  # on pushes and on pull requests from this repository.
+  integration:
+    needs: lint-unit
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    env:
+      NODERINGS_TOKEN: ${{ secrets.NODERINGS_TOKEN }}
+      NODERINGS_TEST_ID: gh-${{ github.run_id }}-${{ github.run_attempt }}
+      KITCHEN_LOCAL_YAML: kitchen.exec.yml
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Cinc Workstation
+        if: env.NODERINGS_TOKEN != ''
+        run: curl -fsSL https://omnitruck.cinc.sh/install.sh | sudo bash -s -- -P cinc-workstation -v 26
+      - name: Converge and verify
+        if: env.NODERINGS_TOKEN != ''
+        run: kitchen test default-local
+      - name: Clean up
+        if: always() && env.NODERINGS_TOKEN != ''
+        run: kitchen test cleanup-local

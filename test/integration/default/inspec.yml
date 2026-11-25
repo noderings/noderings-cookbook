@@ -1,0 +1,17 @@
+---
+name: default
+title: noderings cookbook, default suite
+license: Apache-2.0
+version: 0.1.0
+depends:
+  - name: common
+    path: test/integration/common
+inputs:
+  - name: api_url
+    value: https://api.noderings.com
+  - name: api_token
+    sensitive: true
+  - name: test_id
+    value: kitchen-local
+  - name: domain
+    value: example.com

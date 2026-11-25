@@ -1,0 +1,45 @@
+---
+# Publishes the cookbook to Chef Supermarket when a vX.Y.Z tag is pushed.
+#
+# Before the first release, add two secrets:
+#   SUPERMARKET_USER  your Supermarket user name
+#   SUPERMARKET_KEY   the private key of that user (supermarket.chef.io, Edit profile, Keys)
+name: release
+
+"on":
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: write
+
+jobs:
+  supermarket:
+    runs-on: ubuntu-latest
+    environment: supermarket
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the tag matches metadata.rb
+        run: |
+          version=$(sed -n "s/^version *'\(.*\)'/\1/p" metadata.rb)
+          test "v${version}" = "${GITHUB_REF_NAME}" || { echo "tag ${GITHUB_REF_NAME} does not match metadata.rb version ${version}"; exit 1; }
+      - name: Install Cinc Workstation
+        run: curl -fsSL https://omnitruck.cinc.sh/install.sh | sudo bash -s -- -P cinc-workstation -v 26
+      - name: Share on Supermarket
+        env:
+          SUPERMARKET_USER: ${{ secrets.SUPERMARKET_USER }}
+          SUPERMARKET_KEY: ${{ secrets.SUPERMARKET_KEY }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/cookbooks"
+          ln -s "$GITHUB_WORKSPACE" "$RUNNER_TEMP/cookbooks/noderings"
+          printf '%s\n' "$SUPERMARKET_KEY" > "$RUNNER_TEMP/supermarket.pem"
+          knife supermarket share noderings "Other" \
+            --cookbook-path "$RUNNER_TEMP/cookbooks" \
+            --supermarket-site https://supermarket.chef.io \
+            --user "$SUPERMARKET_USER" --key "$RUNNER_TEMP/supermarket.pem" \
+            --config-option chef_server_url=https://supermarket.chef.io
+          rm -f "$RUNNER_TEMP/supermarket.pem"
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes "See CHANGELOG.md."
