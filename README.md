@@ -8,6 +8,8 @@ Custom resources to manage [NodeRings](https://noderings.com) from Chef Infra:
 virtual machines ordered from the NodeRings marketplace, DNS zones and records,
 firewall rulesets and SSH keys.
 
+New to it? The step-by-step guide [How to use Chef on a NodeRings VPS: cookbook, knife and Test Kitchen](https://noderings.com/blog/chef-vps) walks through a first run.
+
 ```ruby
 noderings_ssh_key 'deploy' do
   public_key ::File.read('/home/deploy/.ssh/id_ed25519.pub')
