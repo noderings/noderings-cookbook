@@ -1,0 +1,7 @@
+---
+name: common
+title: Shared helpers for the noderings integration tests
+license: Apache-2.0
+version: 0.1.0
+supports:
+  - platform: os

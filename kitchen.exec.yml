@@ -1,0 +1,16 @@
+---
+# Runs the suites on this machine with the Cinc Workstation's own client,
+# which is what CI does. The resources only call the NodeRings API.
+driver: { name: exec }
+transport: { name: exec }
+
+provisioner:
+  install_strategy: skip
+  cinc_omnibus_root: /opt/cinc-workstation
+  attributes:
+    noderings_test:
+      api_token: null
+      key_dir: <%= File.join(Dir.pwd, '.kitchen', 'keys') %>
+
+platforms:
+  - name: local

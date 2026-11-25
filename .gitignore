@@ -1,0 +1,37 @@
+*.rbc
+.config
+pkg
+tmp
+_Store
+*~
+*#
+.#*
+\#*#
+*.un~
+*.tmp
+*.bk
+*.bkup
+
+# editor files
+.idea
+.vscode
+.*.sw[a-z]
+
+# ruby/bundler/rspec files
+.ruby-version
+.ruby-gemset
+.rvmrc
+Gemfile.lock
+.bundle
+*.gem
+coverage
+spec/reports
+
+# chef infra stuff
+.kitchen
+kitchen.local.yml
+Policyfile.lock.json
+vendor/
+.zero-knife.rb
+nodes/
+local-mode-cache/

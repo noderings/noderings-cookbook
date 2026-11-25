@@ -1,0 +1,59 @@
+---
+# The resources only call the NodeRings API, so the suites converge anywhere.
+# This file runs them on a NodeRings VM with the kitchen-noderings driver;
+# kitchen.exec.yml runs them on this machine (what CI does).
+#
+#   export NODERINGS_TOKEN=...            # a service account token
+#   export NODERINGS_TEST_BILLED=1        # also run the vm suite (orders a VM)
+#   kitchen test
+driver:
+  name: noderings
+  plan: <%= ENV.fetch('NODERINGS_TEST_PLAN_CODE', 'SC-GC-1C-1G-20') %>
+  country: <%= ENV.fetch('NODERINGS_TEST_COUNTRY', 'United States') %>
+  city: <%= ENV.fetch('NODERINGS_TEST_CITY', 'Ashburn') %>
+
+provisioner:
+  name: chef_infra
+  product_name: cinc
+  enforce_idempotency: true
+  multiple_converge: 2
+  deprecations_as_errors: true
+  policyfile: Policyfile.rb
+  attributes:
+    noderings_test:
+      # Names every test object; give each concurrent run its own.
+      id: <%= ENV.fetch('NODERINGS_TEST_ID', 'kitchen-local') %>
+      # The suites converge on a remote VM, which does not see this shell's
+      # environment, so the token travels as a (test-only) attribute.
+      api_token: <%= ENV['NODERINGS_TOKEN'] %>
+      domain: <%= ENV.fetch('NODERINGS_TEST_DOMAIN', 'example.com') %>
+      plan: <%= ENV.fetch('NODERINGS_TEST_PLAN_CODE', 'SC-GC-1C-1G-20') %>
+      country: <%= ENV.fetch('NODERINGS_TEST_COUNTRY', 'United States') %>
+      city: <%= ENV.fetch('NODERINGS_TEST_CITY', 'Ashburn') %>
+
+verifier:
+  name: inspec
+  inputs:
+    api_url: <%= ENV.fetch('NODERINGS_API_URL', 'https://api.noderings.com') %>
+    api_token: <%= ENV['NODERINGS_TOKEN'] %>
+    test_id: <%= ENV.fetch('NODERINGS_TEST_ID', 'kitchen-local') %>
+    domain: <%= ENV.fetch('NODERINGS_TEST_DOMAIN', 'example.com') %>
+
+platforms:
+  - name: ubuntu-24.04
+
+suites:
+  - name: default
+    provisioner:
+      named_run_list: default
+  # The vm suite orders a billed VM, so it only runs with NODERINGS_TEST_BILLED=1.
+  # <% vm_excludes = ENV['NODERINGS_TEST_BILLED'] == '1' ? '[]' : '[ubuntu-24.04, local]' %>
+  - name: vm
+    excludes: <%= vm_excludes %>
+    provisioner:
+      named_run_list: vm
+  - name: cleanup
+    provisioner:
+      named_run_list: cleanup
+      enforce_idempotency: false
+      multiple_converge: 1
