@@ -441,6 +441,10 @@ module NodeRingsCookbook
       get("/v1/marketplace/providers/#{NodeRingsCookbook.escape(provider_id)}")['provider']
     end
 
+    def get_public_storefront(slug)
+      get("/v1/public/storefronts/#{NodeRingsCookbook.escape(slug)}")['storefront']
+    end
+
     def list_distros
       get('/v1/distros')['distros'] || []
     end

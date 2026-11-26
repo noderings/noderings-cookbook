@@ -24,6 +24,42 @@ describe NodeRingsCookbook::Compute do
                                                                          require_capabilities: ['guest_firewall'])[2]['provider_name']).to eq 'Cheap Host'
   end
 
+  context 'with a provider' do
+    [FakeNodeRings::ACME_ID, 'acme-hosting', 'Acme Hosting', '  acme HOSTING '].each do |provider|
+      it "orders from the provider given as #{provider.inspect}" do
+        plan_id, region_id, offer = compute.choose_offer(client, 'SC-GC-1C-1G-20', 'United States', 'Ashburn',
+                                                         provider: provider)
+        expect([plan_id, region_id, offer['provider_name']]).to eq [FakeNodeRings::ACME_PLAN_ID, FakeNodeRings::ACME_REGION_ID, 'Acme Hosting']
+      end
+    end
+
+    it 'takes the cheapest offer without one' do
+      expect(compute.choose_offer(client, 'SC-GC-1C-1G-20', 'United States', 'Ashburn', provider: '').first).to eq FakeNodeRings::PLAN_ID
+    end
+
+    it 'prefers provider_id when both are given' do
+      expect(compute.choose_offer(client, 'SC-GC-1C-1G-20', 'United States', 'Ashburn',
+                                  provider_id: FakeNodeRings::ACME_ID, provider: 'Cheap Host').first).to eq FakeNodeRings::ACME_PLAN_ID
+    end
+
+    it 'fails for an unknown provider' do
+      expect { compute.choose_offer(client, 'SC-GC-1C-1G-20', 'United States', 'Ashburn', provider: 'Nobody Hosting') }
+        .to raise_error(NodeRingsCookbook::UsageError, /in Ashburn, United States from provider Nobody Hosting/)
+    end
+
+    it 'refuses a provider name two providers share' do
+      fake.extra_providers << FakeNodeRings::ACME_OFFER.merge('organizationId' => '66666666-6666-6666-6666-666666666666')
+      expect { compute.choose_offer(client, 'SC-GC-1C-1G-20', 'United States', 'Ashburn', provider: 'acme hosting') }
+        .to raise_error(NodeRingsCookbook::UsageError, /more than one provider is named acme hosting; give its provider ID or storefront slug/)
+    end
+
+    it 'passes on storefront errors other than not found' do
+      fake.failures['GET /v1/public/storefronts/acme-hosting'] = [403]
+      expect { compute.choose_offer(client, 'SC-GC-1C-1G-20', 'United States', 'Ashburn', provider: 'acme-hosting') }
+        .to raise_error(NodeRingsCookbook::APIError)
+    end
+  end
+
   it 'explains a missing offer' do
     expect { compute.choose_offer(client, 'P', 'United States', 'Nowhere') }
       .to raise_error(NodeRingsCookbook::UsageError, /No offer for plan code P in Nowhere/)

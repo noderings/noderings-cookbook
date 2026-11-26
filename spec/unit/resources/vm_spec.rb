@@ -47,6 +47,23 @@ describe 'noderings_vm' do
     end
   end
 
+  context 'ordering from a named provider' do
+    recipe do
+      noderings_vm 'web-1' do
+        plan 'SC-GC-1C-1G-20'
+        country 'United States'
+        city 'Ashburn'
+        hosting_provider 'acme-hosting'
+        ssh_keys ['laptop']
+      end
+    end
+
+    it 'orders the offer of that provider' do
+      chef_run
+      expect(@fake.created_vm_bodies.last).to include('planId' => FakeNodeRings::ACME_PLAN_ID, 'regionId' => FakeNodeRings::ACME_REGION_ID)
+    end
+  end
+
   context 'an existing VM' do
     before { order_existing }
 
