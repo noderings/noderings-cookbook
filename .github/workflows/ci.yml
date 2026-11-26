@@ -1,10 +1,16 @@
 ---
 name: ci
 
+# Runs on GitHub-hosted runners until a NodeRings self-hosted runner exists.
+# To switch, register a runner with the labels "self-hosted" and "noderings"
+# (see .github/self-hosted-runner.md) and set the repository variable
+# NODERINGS_RUNNER=true. Pull requests from forks always stay on
+# GitHub-hosted runners: never run untrusted code on our own machines.
 "on":
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -15,21 +21,27 @@ concurrency:
 
 jobs:
   lint-unit:
-    runs-on: ubuntu-latest
+    runs-on: ${{ (vars.NODERINGS_RUNNER == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)) && fromJSON('["self-hosted","noderings"]') || 'ubuntu-latest' }}
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Install Cinc Workstation
-        run: curl -fsSL https://omnitruck.cinc.sh/install.sh | sudo bash -s -- -P cinc-workstation -v 26
+        run: command -v cookstyle >/dev/null || curl -fsSL https://omnitruck.cinc.sh/install.sh | sudo bash -s -- -P cinc-workstation -v 26
       - name: Cookstyle
         run: cookstyle --display-cop-names --extra-details
       - name: ChefSpec
         run: cinc exec rspec
 
   markdown-yaml:
-    runs-on: ubuntu-latest
+    runs-on: ${{ (vars.NODERINGS_RUNNER == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)) && fromJSON('["self-hosted","noderings"]') || 'ubuntu-latest' }}
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: DavidAnson/markdownlint-cli2-action@v20
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: DavidAnson/markdownlint-cli2-action@36744e48c825cb8d549f6353f8837505de1922c7 # v25.1.0
         with:
           globs: "**/*.md"
       - name: yamllint
@@ -39,17 +51,20 @@ jobs:
   # on pushes and on pull requests from this repository.
   integration:
     needs: lint-unit
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ${{ (vars.NODERINGS_RUNNER == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)) && fromJSON('["self-hosted","noderings"]') || 'ubuntu-latest' }}
+    timeout-minutes: 45
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     env:
       NODERINGS_TOKEN: ${{ secrets.NODERINGS_TOKEN }}
       NODERINGS_TEST_ID: gh-${{ github.run_id }}-${{ github.run_attempt }}
       KITCHEN_LOCAL_YAML: kitchen.exec.yml
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Install Cinc Workstation
         if: env.NODERINGS_TOKEN != ''
-        run: curl -fsSL https://omnitruck.cinc.sh/install.sh | sudo bash -s -- -P cinc-workstation -v 26
+        run: command -v cookstyle >/dev/null || curl -fsSL https://omnitruck.cinc.sh/install.sh | sudo bash -s -- -P cinc-workstation -v 26
       - name: Converge and verify
         if: env.NODERINGS_TOKEN != ''
         run: kitchen test default-local

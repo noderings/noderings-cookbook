@@ -1,45 +1,121 @@
 ---
-# Publishes the cookbook to Chef Supermarket when a vX.Y.Z tag is pushed.
+# Shares the cookbook on Chef Supermarket when release-please pushes a vX.Y.Z tag,
+# then publishes the draft GitHub release.
 #
-# Before the first release, add two secrets:
-#   SUPERMARKET_USER  your Supermarket user name
-#   SUPERMARKET_KEY   the private key of that user (supermarket.chef.io, Edit profile, Keys)
+# Chef Supermarket has no API tokens. `knife supermarket share` signs its request
+# with the private key of the Supermarket user, so the job needs two secrets:
+#   SUPERMARKET_USER  the Supermarket user name (the Chef account the cookbook is shared under)
+#   SUPERMARKET_KEY   the private key (.pem) of that user, from manage.chef.io (see CONTRIBUTING.md, Releasing)
+# Until both exist the Supermarket step is skipped with a warning. Add them, then
+# open Actions, Release, "Run workflow" from the tag to share the version.
+#
+# Always runs on GitHub-hosted runners: release builds never touch the
+# self-hosted runner.
 name: release
 
 "on":
   push:
     tags: ["v*.*.*"]
+  workflow_dispatch: # run it from a tag (Use workflow from: Tags) to retry a release
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  TAG: ${{ github.ref_name }}
+  COOKBOOK: noderings
+  SUPERMARKET_CATEGORY: Operating Systems & Virtualization
+  SUPERMARKET_SITE: https://supermarket.chef.io
 
 jobs:
   supermarket:
+    name: Share on Chef Supermarket
     runs-on: ubuntu-latest
-    environment: supermarket
+    timeout-minutes: 15
+    environment:
+      name: supermarket
+      url: https://supermarket.chef.io/cookbooks/noderings
     steps:
-      - uses: actions/checkout@v4
+      - name: Check this runs for a version tag
+        run: |
+          case "${TAG}" in
+            v[0-9]*.[0-9]*.[0-9]*) ;;
+            *) echo "::error::Run this workflow from a vX.Y.Z tag, not ${TAG}."; exit 1 ;;
+          esac
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Check the tag matches metadata.rb
         run: |
-          version=$(sed -n "s/^version *'\(.*\)'/\1/p" metadata.rb)
-          test "v${version}" = "${GITHUB_REF_NAME}" || { echo "tag ${GITHUB_REF_NAME} does not match metadata.rb version ${version}"; exit 1; }
-      - name: Install Cinc Workstation
-        run: curl -fsSL https://omnitruck.cinc.sh/install.sh | sudo bash -s -- -P cinc-workstation -v 26
-      - name: Share on Supermarket
+          version=$(sed -n "s/^version *'\([^']*\)'.*/\1/p" metadata.rb)
+          test "v${version}" = "${TAG}" || { echo "::error::Tag ${TAG} does not match metadata.rb version ${version}."; exit 1; }
+      - name: Check the Supermarket credentials are set up
+        id: check
         env:
           SUPERMARKET_USER: ${{ secrets.SUPERMARKET_USER }}
           SUPERMARKET_KEY: ${{ secrets.SUPERMARKET_KEY }}
         run: |
-          mkdir -p "$RUNNER_TEMP/cookbooks"
-          ln -s "$GITHUB_WORKSPACE" "$RUNNER_TEMP/cookbooks/noderings"
-          printf '%s\n' "$SUPERMARKET_KEY" > "$RUNNER_TEMP/supermarket.pem"
-          knife supermarket share noderings "Other" \
-            --cookbook-path "$RUNNER_TEMP/cookbooks" \
-            --supermarket-site https://supermarket.chef.io \
-            --user "$SUPERMARKET_USER" --key "$RUNNER_TEMP/supermarket.pem" \
-            --config-option chef_server_url=https://supermarket.chef.io
-          rm -f "$RUNNER_TEMP/supermarket.pem"
-      - name: GitHub release
+          if [ -n "${SUPERMARKET_USER}" ] && [ -n "${SUPERMARKET_KEY}" ]; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning title=Supermarket skipped::Set the secrets SUPERMARKET_USER and SUPERMARKET_KEY (see CONTRIBUTING.md, Releasing), then run this workflow again from the tag."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Check the version is not on Supermarket yet
+        id: exists
+        if: steps.check.outputs.publish == 'true'
+        run: |
+          version="${TAG#v}"
+          code=$(curl -s -o /dev/null -w '%{http_code}' "${SUPERMARKET_SITE}/api/v1/cookbooks/${COOKBOOK}/versions/${version}")
+          if [ "${code}" = "200" ]; then
+            echo "::notice::${COOKBOOK} ${version} is already on Supermarket, nothing to share."
+            echo "shared=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "shared=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Install Cinc Workstation
+        if: steps.check.outputs.publish == 'true' && steps.exists.outputs.shared != 'true'
+        run: command -v knife >/dev/null || curl -fsSL https://omnitruck.cinc.sh/install.sh | sudo bash -s -- -P cinc-workstation -v 26
+      - name: Share the cookbook
+        if: steps.check.outputs.publish == 'true' && steps.exists.outputs.shared != 'true'
+        env:
+          SUPERMARKET_USER: ${{ secrets.SUPERMARKET_USER }}
+          SUPERMARKET_KEY: ${{ secrets.SUPERMARKET_KEY }}
+        run: |
+          umask 077
+          work="${RUNNER_TEMP}/supermarket"
+          mkdir -p "${work}/cookbooks"
+          ln -s "${GITHUB_WORKSPACE}" "${work}/cookbooks/${COOKBOOK}"
+          printf '%s\n' "${SUPERMARKET_KEY}" > "${work}/user.pem"
+          {
+            echo "node_name '${SUPERMARKET_USER}'"
+            echo "client_key '${work}/user.pem'"
+            echo "cookbook_path ['${work}/cookbooks']"
+          } > "${work}/knife.rb"
+          knife supermarket share "${COOKBOOK}" "${SUPERMARKET_CATEGORY}" \
+            --config "${work}/knife.rb" --supermarket-site "${SUPERMARKET_SITE}"
+      - name: Remove the key
+        if: always()
+        run: rm -rf "${RUNNER_TEMP}/supermarket"
+
+  github-release:
+    name: GitHub release
+    needs: supermarket
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes "See CHANGELOG.md."
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if ! gh release view "${TAG}" >/dev/null 2>&1; then
+            gh release create "${TAG}" --verify-tag --draft --title "${TAG}" --notes "See CHANGELOG.md."
+          fi
+          gh release edit "${TAG}" --draft=false --latest
