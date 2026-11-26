@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.0](https://github.com/noderings/noderings-cookbook/compare/v0.1.1...v0.2.0) (2026-11-26)
+
+
+### Features
+
+* choose the provider when ordering a VM ([#6](https://github.com/noderings/noderings-cookbook/issues/6)) ([705f101](https://github.com/noderings/noderings-cookbook/commit/705f101fa4aadfbdb9c4734bb7a0825b7b513cef))
+
+
+### Documentation
+
+* use the cookbook's list style in the runner note ([ff325d4](https://github.com/noderings/noderings-cookbook/commit/ff325d4ec8ab65fe8eb09117e0430af2a7b08014))
+
 ## [0.1.1](https://github.com/noderings/noderings-cookbook/compare/v0.1.0...v0.1.1) (2026-11-26)
 
 

@@ -5,7 +5,7 @@ maintainer        'NodeRings'
 maintainer_email  'partners@noderings.com'
 license           'Apache-2.0'
 description       'Resources to manage NodeRings virtual machines, DNS zones and records, firewall rulesets and SSH keys'
-version           '0.1.1' # x-release-please-version
+version           '0.2.0' # x-release-please-version
 source_url        'https://github.com/noderings/noderings-cookbook'
 issues_url        'https://github.com/noderings/noderings-cookbook/issues'
 chef_version      '>= 17'
