@@ -45,6 +45,29 @@ The resources call the NodeRings API, so they can run on any node: a workstation
 with `chef-client --local-mode`, a management node, or a CI runner. They use the
 Ruby standard library only and install nothing on the node.
 
+## Installation
+
+The cookbook is on [Chef Supermarket](https://supermarket.chef.io/cookbooks/noderings).
+Add it as a dependency in a wrapper cookbook's `metadata.rb`:
+
+```ruby
+depends 'noderings'
+```
+
+With Berkshelf, in the `Berksfile`:
+
+```ruby
+source 'https://supermarket.chef.io'
+cookbook 'noderings'
+```
+
+With a Policyfile:
+
+```ruby
+default_source :supermarket
+cookbook 'noderings'
+```
+
 ## Requirements
 
 ### Chef Infra Client
