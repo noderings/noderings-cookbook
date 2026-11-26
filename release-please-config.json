@@ -9,24 +9,63 @@
   "force-tag-creation": true,
   "pull-request-title-pattern": "chore: release ${version}",
   "changelog-sections": [
-    { "type": "feat", "section": "Features" },
-    { "type": "fix", "section": "Bug Fixes" },
-    { "type": "perf", "section": "Performance" },
-    { "type": "deps", "section": "Dependencies" },
-    { "type": "docs", "section": "Documentation" },
-    { "type": "refactor", "section": "Other", "hidden": true },
-    { "type": "chore", "section": "Other", "hidden": true },
-    { "type": "ci", "section": "Other", "hidden": true },
-    { "type": "test", "section": "Other", "hidden": true },
-    { "type": "build", "section": "Other", "hidden": true }
+    {
+      "type": "feat",
+      "section": "Features"
+    },
+    {
+      "type": "fix",
+      "section": "Bug Fixes"
+    },
+    {
+      "type": "perf",
+      "section": "Performance"
+    },
+    {
+      "type": "deps",
+      "section": "Dependencies"
+    },
+    {
+      "type": "docs",
+      "section": "Documentation"
+    },
+    {
+      "type": "refactor",
+      "section": "Other",
+      "hidden": true
+    },
+    {
+      "type": "chore",
+      "section": "Other",
+      "hidden": true
+    },
+    {
+      "type": "ci",
+      "section": "Other",
+      "hidden": true
+    },
+    {
+      "type": "test",
+      "section": "Other",
+      "hidden": true
+    },
+    {
+      "type": "build",
+      "section": "Other",
+      "hidden": true
+    }
   ],
   "packages": {
     ".": {
       "package-name": "noderings",
       "changelog-path": "CHANGELOG.md",
       "extra-files": [
-        { "type": "generic", "path": "metadata.rb" }
+        {
+          "type": "generic",
+          "path": "metadata.rb"
+        }
       ]
     }
-  }
+  },
+  "initial-version": "0.1.0"
 }
