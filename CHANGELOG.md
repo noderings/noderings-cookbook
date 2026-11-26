@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/noderings/noderings-cookbook/compare/v0.1.0...v0.1.1) (2026-11-26)
+
+
+### Documentation
+
+* add Supermarket install snippet to the README ([1a04c25](https://github.com/noderings/noderings-cookbook/commit/1a04c25dc9dd9ff1197b683f5d60901889b4cef4))
+
 ## 0.1.0 (2026-11-26)
 
 
