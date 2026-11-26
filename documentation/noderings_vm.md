@@ -31,7 +31,8 @@ The [API properties](partial_api.md) also apply.
 | `city` | String | | City of the offer, such as `Ashburn`. |
 | `billing_type` | String | `usage` | `usage` (hourly), `subscription` (monthly) or `free`. |
 | `sort` | String | `price` | Order the cheapest matching offer, or the best rated with `rating`. |
-| `provider_id` | String | | Only consider offers from this provider. |
+| `hosting_provider` | String | any provider | Only consider offers from this provider, given by its ID, storefront slug or name. See below. |
+| `provider_id` | String | | Only consider offers from the provider with this ID. Takes precedence over `hosting_provider`. |
 | `require_capabilities` | Array | `[]` | Only consider providers with these capabilities, such as `guest_firewall`. |
 | `require_ipv6` | true, false | `false` | Only consider offers with IPv6. |
 | `plan_id`, `region_id` | String | | An exact plan and region, instead of `plan`, `country` and `city`. |
@@ -49,6 +50,13 @@ To order, give `plan`, `country` and `city`; the resource orders the cheapest
 offer that matches (or the best rated with `sort 'rating'`). Find what is sold in
 the NodeRings console marketplace, or with
 `knife noderings plan list` from [knife-noderings](https://github.com/noderings/knife-noderings).
+
+Without `hosting_provider` the resource takes the cheapest offer (compute price,
+then rating), so the provider can change between orders. Set `hosting_provider`
+to keep it fixed. It takes the provider's ID, its storefront slug (such as
+`acme-hosting`) or its name (`Acme Hosting`, any case). A name that more than one
+provider uses fails the run; give the ID or slug then. The property is not called
+`provider` because Chef reserves that name on every resource.
 
 The order carries an idempotency key, so a lost response is retried without
 ordering twice.
@@ -68,6 +76,7 @@ noderings_vm 'web-1' do
   plan 'SC-GC-1C-1G-20'
   country 'United States'
   city 'Ashburn'
+  hosting_provider 'acme-hosting'
   distro 'debian_13'
   ssh_keys ['deploy']
   tags %w(web production)

@@ -32,8 +32,12 @@ property :billing_type, String,
           equal_to: %w(usage subscription free),
           description: 'How the plan is billed'
 
+property :hosting_provider, String,
+          description: 'Only consider offers from this provider, given by its ID, storefront slug or name (any case). ' \
+                       'Left unset, the cheapest matching offer from any provider is ordered. (Chef reserves the name provider.)'
+
 property :provider_id, String,
-          description: 'Only consider offers from this provider'
+          description: 'Only consider offers from the provider with this ID. Takes precedence over hosting_provider'
 
 property :sort, String,
           default: 'price',
@@ -143,7 +147,8 @@ action_class do
       compute.choose_offer(noderings_client, new_resource.plan, new_resource.country, new_resource.city,
                            billing_type: new_resource.billing_type, provider_id: new_resource.provider_id,
                            require_capabilities: new_resource.require_capabilities,
-                           require_ipv6: new_resource.require_ipv6, sort: new_resource.sort)
+                           require_ipv6: new_resource.require_ipv6, sort: new_resource.sort,
+                           provider: new_resource.hosting_provider)
     end
     [plan_id, region_id, "#{new_resource.plan} from #{offer['provider_name']} in #{new_resource.city}, #{new_resource.country}"]
   end
