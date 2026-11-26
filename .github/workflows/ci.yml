@@ -9,6 +9,9 @@ name: ci
   pull_request:
   push:
     branches: [main]
+  schedule:
+    # Nightly live API tests (free Kitchen suites). Skips when NODERINGS_TOKEN is unset.
+    - cron: "17 4 * * *"
   workflow_dispatch:
 
 permissions:
@@ -59,7 +62,11 @@ jobs:
       NODERINGS_TEST_ID: gh-${{ github.run_id }}-${{ github.run_attempt }}
       KITCHEN_LOCAL_YAML: kitchen.exec.yml
     steps:
+      - name: Skip when NODERINGS_TOKEN is not set
+        if: env.NODERINGS_TOKEN == ''
+        run: echo "::notice title=Live tests skipped::Add the repository secret NODERINGS_TOKEN (a service account token for a test organization) to run them."
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: env.NODERINGS_TOKEN != ''
         with:
           persist-credentials: false
       - name: Install Cinc Workstation
