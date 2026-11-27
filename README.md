@@ -142,6 +142,7 @@ which call the real API.
 
 * [knife-noderings](https://github.com/noderings/knife-noderings): order a NodeRings server and bootstrap Chef on it with knife
 * [kitchen-noderings](https://github.com/noderings/kitchen-noderings): run Test Kitchen instances on NodeRings servers
+* [noderings-go](https://github.com/noderings/noderings-go): official Go SDK for the NodeRings API
 
 ## Contributing
 
