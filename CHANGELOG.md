@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/noderings/noderings-cookbook/compare/v0.2.0...v0.2.1) (2026-11-27)
+
+
+### Documentation
+
+* link the official Go SDK in the README ([#10](https://github.com/noderings/noderings-cookbook/issues/10)) ([0e17fc8](https://github.com/noderings/noderings-cookbook/commit/0e17fc88fc7d20e99e22a5bf760094464a5612f8))
+
 ## [0.2.0](https://github.com/noderings/noderings-cookbook/compare/v0.1.1...v0.2.0) (2026-11-26)
 
 
